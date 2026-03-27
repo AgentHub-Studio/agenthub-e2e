@@ -1,0 +1,9 @@
+/project/src/test/java/dev/cezar/agenthub/e2e/config/E2EConfig.java
+/project/src/test/java/dev/cezar/agenthub/e2e/flows/AgentChatE2ETest.java
+/project/src/test/java/dev/cezar/agenthub/e2e/flows/AiServicesSmokeE2ETest.java
+/project/src/test/java/dev/cezar/agenthub/e2e/flows/MultiTenantIsolationE2ETest.java
+/project/src/test/java/dev/cezar/agenthub/e2e/flows/RagPipelineE2ETest.java
+/project/src/test/java/dev/cezar/agenthub/e2e/flows/SkillToolCrudE2ETest.java
+/project/src/test/java/dev/cezar/agenthub/e2e/flows/TenantProvisioningE2ETest.java
+/project/src/test/java/dev/cezar/agenthub/e2e/support/KeycloakClient.java
+/project/src/test/java/dev/cezar/agenthub/e2e/support/TenantFixture.java
