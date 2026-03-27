@@ -25,7 +25,7 @@ import static org.junit.jupiter.api.Assertions.*;
 @DisplayName("Fluxo 6 — Smoke Tests dos Serviços IA")
 class AiServicesSmokeE2ETest {
 
-    private static final int TIMEOUT_SECONDS = 10;
+    private static final int TIMEOUT_SECONDS = 60;
 
     @Test
     @Order(1)

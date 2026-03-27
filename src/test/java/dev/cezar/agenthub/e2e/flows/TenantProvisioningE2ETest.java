@@ -111,6 +111,7 @@ class TenantProvisioningE2ETest {
     void listTenants_containsCreatedTenant() {
         given()
                 .baseUri(E2EConfig.BACKEND_URL)
+                .queryParam("size", 500)
                 .get("/public/tenants")
                 .then()
                 .statusCode(200)

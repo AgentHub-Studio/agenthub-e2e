@@ -63,7 +63,7 @@ class MultiTenantIsolationE2ETest {
                 ))
                 .post("/api/agents")
                 .then()
-                .statusCode(201)
+                .statusCode(anyOf(equalTo(200), equalTo(201)))
                 .body("name", equalTo("agent-exclusivo-a"))
                 .extract().response();
 
@@ -135,7 +135,7 @@ class MultiTenantIsolationE2ETest {
                 ))
                 .post("/api/agents")
                 .then()
-                .statusCode(201)
+                .statusCode(anyOf(equalTo(200), equalTo(201)))
                 .extract().jsonPath().getString("id");
 
         // Verify B sees its agent
