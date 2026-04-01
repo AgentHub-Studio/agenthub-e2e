@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"mime/multipart"
 	"net/http"
 	"time"
 )
@@ -73,6 +74,50 @@ func (c *Client) do(method, path string, body, dest any) (int, error) {
 	if dest != nil && resp.StatusCode < 400 {
 		if err := json.NewDecoder(resp.Body).Decode(dest); err != nil {
 			return resp.StatusCode, fmt.Errorf("decode response: %w", err)
+		}
+	}
+	return resp.StatusCode, nil
+}
+
+// PostMultipart performs a multipart/form-data POST.
+// fields contains text fields; fileField/fileName/fileContent define the file part.
+func (c *Client) PostMultipart(path, fileField, fileName string, fileContent []byte, fields map[string]string, dest any) (int, error) {
+	var buf bytes.Buffer
+	mw := multipart.NewWriter(&buf)
+
+	for k, v := range fields {
+		if err := mw.WriteField(k, v); err != nil {
+			return 0, fmt.Errorf("write field %s: %w", k, err)
+		}
+	}
+
+	fw, err := mw.CreateFormFile(fileField, fileName)
+	if err != nil {
+		return 0, fmt.Errorf("create form file: %w", err)
+	}
+	if _, err := fw.Write(fileContent); err != nil {
+		return 0, fmt.Errorf("write file content: %w", err)
+	}
+	mw.Close()
+
+	req, err := http.NewRequest(http.MethodPost, c.base+path, &buf)
+	if err != nil {
+		return 0, fmt.Errorf("build multipart request: %w", err)
+	}
+	req.Header.Set("Content-Type", mw.FormDataContentType())
+	if c.token != "" {
+		req.Header.Set("Authorization", "Bearer "+c.token)
+	}
+
+	resp, err := c.http.Do(req)
+	if err != nil {
+		return 0, fmt.Errorf("execute multipart request: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if dest != nil && resp.StatusCode < 400 {
+		if err := json.NewDecoder(resp.Body).Decode(dest); err != nil {
+			return resp.StatusCode, fmt.Errorf("decode multipart response: %w", err)
 		}
 	}
 	return resp.StatusCode, nil
