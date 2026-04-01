@@ -46,11 +46,14 @@ type contractCase struct {
 	statusCode int
 }
 
+func newJavaClient() *client.Client { return client.New(javaURL(), authToken()) }
+func newGoClient() *client.Client  { return client.New(goURL(), authToken()) }
+
 func runContractCases(t *testing.T, cases []contractCase) {
 	t.Helper()
 	opts := comparator.DefaultOptions()
-	javaClient := client.New(javaURL(), authToken())
-	goClient := client.New(goURL(), authToken())
+	javaClient := newJavaClient()
+	goClient := newGoClient()
 
 	for _, tc := range cases {
 		tc := tc
@@ -74,6 +77,50 @@ func runContractCases(t *testing.T, cases []contractCase) {
 				t.Errorf("JSON contract violation for %q:\n%s", tc.name, strings.Join(diffs, "\n"))
 			}
 		})
+	}
+}
+
+// runContractCasesWithSnapshot runs contract tests and optionally captures/compares snapshots.
+// In UPDATE_SNAPSHOTS=true mode it writes Go responses as baseline.
+// In normal mode it compares Go response against stored snapshot.
+func runContractCasesWithSnapshot(t *testing.T, store interface {
+	Assert(t *testing.T, name string, body []byte)
+}, cases []contractCase) {
+	t.Helper()
+	goClient := newGoClient()
+
+	for _, tc := range cases {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			goBody, goStatus, err := goClient.Get(tc.goPath)
+			require.NoError(t, err, "Go GET failed")
+
+			expectedStatus := tc.statusCode
+			if expectedStatus == 0 {
+				expectedStatus = http.StatusOK
+			}
+			assert.Equal(t, expectedStatus, goStatus, "Go status mismatch")
+
+			store.Assert(t, tc.name, goBody)
+		})
+	}
+}
+
+// assertPaginationStructure verifies that both Java and Go return the same Page[T] shape.
+// Fields compared: content (array), totalElements, totalPages, size, number.
+func assertPaginationStructure(t *testing.T, javaBody, goBody []byte) {
+	t.Helper()
+
+	pageFields := comparator.Options{
+		IgnoreFields: map[string]bool{
+			// Ignore content items themselves — just check page metadata fields.
+			"content": true,
+		},
+	}
+
+	diffs := comparator.Diff(javaBody, goBody, pageFields)
+	if len(diffs) > 0 {
+		t.Errorf("pagination structure mismatch:\n%s", strings.Join(diffs, "\n"))
 	}
 }
 
