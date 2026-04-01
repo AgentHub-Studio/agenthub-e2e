@@ -14,15 +14,17 @@ import (
 
 // Containers holds all running infrastructure containers for a test suite.
 type Containers struct {
-	Postgres *postgres.PostgresContainer
-	RabbitMQ *rabbitmq.RabbitMQContainer
-	Keycloak testcontainers.Container
-	MinIO    testcontainers.Container
+	Postgres   *postgres.PostgresContainer
+	RabbitMQ   *rabbitmq.RabbitMQContainer
+	Keycloak   testcontainers.Container
+	MinIO      testcontainers.Container
+	ClickHouse testcontainers.Container
 
-	PostgresDSN  string
-	RabbitMQURL  string
-	KeycloakURL  string
-	MinIOAddress string
+	PostgresDSN      string
+	RabbitMQURL      string
+	KeycloakURL      string
+	MinIOAddress     string
+	ClickHouseDSN    string // clickhouse://host:9000/default
 }
 
 // StartContainers starts all required infrastructure containers.
@@ -127,6 +129,39 @@ func StartContainers(ctx context.Context) (*Containers, error) {
 	}
 	c.MinIOAddress = fmt.Sprintf("%s:%s", minioHost, minioPort.Port())
 
+	ch, err := testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
+		ContainerRequest: testcontainers.ContainerRequest{
+			Image: "clickhouse/clickhouse-server:24-alpine",
+			Env: map[string]string{
+				"CLICKHOUSE_DB":       "agenthub_observability",
+				"CLICKHOUSE_USER":     "default",
+				"CLICKHOUSE_PASSWORD": "",
+			},
+			ExposedPorts: []string{"9000/tcp", "8123/tcp"},
+			WaitingFor: wait.ForHTTP("/ping").
+				WithPort("8123/tcp").
+				WithStartupTimeout(60 * time.Second),
+		},
+		Started: true,
+	})
+	if err != nil {
+		_ = pgc.Terminate(ctx)
+		_ = rmq.Terminate(ctx)
+		_ = kc.Terminate(ctx)
+		_ = minio.Terminate(ctx)
+		return nil, fmt.Errorf("start clickhouse: %w", err)
+	}
+	c.ClickHouse = ch
+	chHost, err := ch.Host(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("clickhouse host: %w", err)
+	}
+	chPort, err := ch.MappedPort(ctx, "9000")
+	if err != nil {
+		return nil, fmt.Errorf("clickhouse port: %w", err)
+	}
+	c.ClickHouseDSN = fmt.Sprintf("clickhouse://default:@%s:%s/agenthub_observability", chHost, chPort.Port())
+
 	return c, nil
 }
 
@@ -143,5 +178,8 @@ func (c *Containers) Terminate(ctx context.Context) {
 	}
 	if c.MinIO != nil {
 		_ = c.MinIO.Terminate(ctx)
+	}
+	if c.ClickHouse != nil {
+		_ = c.ClickHouse.Terminate(ctx)
 	}
 }
