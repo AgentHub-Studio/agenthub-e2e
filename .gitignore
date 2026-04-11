@@ -1,0 +1,15 @@
+# Maven build artifacts
+target/
+
+# IDE
+.idea/
+.vscode/
+*.iml
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Env
+.env
+*.log

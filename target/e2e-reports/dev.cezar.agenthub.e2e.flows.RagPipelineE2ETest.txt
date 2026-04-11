@@ -1,4 +1,0 @@
--------------------------------------------------------------------------------
-Test set: dev.cezar.agenthub.e2e.flows.RagPipelineE2ETest
--------------------------------------------------------------------------------
-Tests run: 5, Failures: 0, Errors: 0, Skipped: 2, Time elapsed: 131.9 s -- in dev.cezar.agenthub.e2e.flows.RagPipelineE2ETest

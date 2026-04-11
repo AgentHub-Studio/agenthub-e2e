@@ -1,4 +1,0 @@
--------------------------------------------------------------------------------
-Test set: dev.cezar.agenthub.e2e.flows.AiServicesSmokeE2ETest
--------------------------------------------------------------------------------
-Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 2.418 s -- in dev.cezar.agenthub.e2e.flows.AiServicesSmokeE2ETest
